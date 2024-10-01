@@ -21,7 +21,7 @@
 *.pem
 
 # ide files
-/.idea
+/.idea/
 
 # debug
 npm-debug.log*
