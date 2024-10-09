@@ -11,11 +11,13 @@ interface GameResult {
     winnerLine?: number[],
 }
 
-function Square({value, onSquareClick, highlight}: {
+interface SquareProps {
     value: string,
     onSquareClick: () => void,
     highlight?: boolean | undefined
-}) {
+}
+
+function Square({value, onSquareClick, highlight}: SquareProps) {
     return (
         <button className={`square ${highlight ? 'highlighted-square' : ''}`}
                 onClick={onSquareClick}>
@@ -51,16 +53,16 @@ function Board({xIsNext, squares, onPlay} : {xIsNext: boolean, squares: string[]
         onPlay(nextSquares);
     }
 
-    const n_rows = 3;
-    const n_cols = 3;
+    const nRows = 3;
+    const nCols = 3;
     
     return (
         <>
             <div className='status'>{statusInfo}</div>
-            {[...Array(n_rows)].map((_, row) => (
+            {[...Array(nRows)].map((_, row) => (
                 <div className='board-row' key={row}>
-                    {[...Array(n_cols)].map((_, col) => {
-                        const index = row * n_cols + col;
+                    {[...Array(nCols)].map((_, col) => {
+                        const index = row * nCols + col;
                         const highlight = Array.isArray(winnerLine) && winnerLine.includes(index);
                         return (
                             <Square key={index}
