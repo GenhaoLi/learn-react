@@ -1,24 +1,49 @@
 "use client";
 
 import {useState} from "react";
-import {Simulate} from "react-dom/test-utils";
 
-function Square({value, onSquareClick} : {value: string, onSquareClick: () => void}) {
+// literals type for the game result, including a draw, or not finished yet.
+type FinishedStatus = 'Draw' | 'Has Winner';
+type GameStatus = FinishedStatus | 'Not Finished';
+interface GameResult {
+    status: GameStatus,
+    winner?: string,
+    winnerLine?: number[],
+}
+
+function Square({value, onSquareClick, highlight}: {
+    value: string,
+    onSquareClick: () => void,
+    highlight?: boolean | undefined
+}) {
     return (
-        <button className="square" onClick={onSquareClick}>
+        <button className={`square ${highlight ? 'highlighted-square' : ''}`}
+                onClick={onSquareClick}>
             {value}
         </button>
     );
 }
 
 function Board({xIsNext, squares, onPlay} : {xIsNext: boolean, squares: string[], onPlay: (squares: string[]) => void}) {
-    const winnerLine = calculateWinnerLine(squares);
-    const winner = winnerLine ? squares[winnerLine[0]] : null;
-    let status = winner ? `Winner: ${winner}` : `Next player: ${xIsNext ? 'X' : 'O'}`;
+    const {status, winner, winnerLine} = calculateGameResult(squares);
+    let statusInfo: string;
+    switch (status) {
+        case 'Has Winner':
+            statusInfo = `Winner: ${winner}`;
+            break;
+        case 'Draw':
+            statusInfo = 'Draw';
+            break;
+        case 'Not Finished':
+            statusInfo = `Next player: ${xIsNext ? 'X' : 'O'}`;
+            break;
+        default:
+            throw new Error('Invalid game status');
+    }
     
     function handleClick(i: number) {
-        // If the square is already filled, or there is a winner before this move, do nothing.
-        if (squares[i] || winner) {
+        // If the square is already filled, or game is finished before this move, do nothing.
+        if (squares[i] || status !== 'Not Finished') {
             return;
         }
         const nextSquares = squares.slice();
@@ -31,14 +56,16 @@ function Board({xIsNext, squares, onPlay} : {xIsNext: boolean, squares: string[]
     
     return (
         <>
-            <div className='status'>{status}</div>
+            <div className='status'>{statusInfo}</div>
             {[...Array(n_rows)].map((_, row) => (
                 <div className='board-row' key={row}>
                     {[...Array(n_cols)].map((_, col) => {
                         const index = row * n_cols + col;
+                        const highlight = Array.isArray(winnerLine) && winnerLine.includes(index);
                         return (
                             <Square key={index}
                                     value={squares[index]}
+                                    highlight={highlight}
                                     onSquareClick={() => handleClick(index)}/>
                         )
                     })}
@@ -54,7 +81,10 @@ function Board({xIsNext, squares, onPlay} : {xIsNext: boolean, squares: string[]
  * @returns if no winner, return null; otherwise, return the winning line indices. 
  * The actual winner can be inferred from the first element of the returned array.
  */
-function calculateWinnerLine(squares: string[]): number[] | null {
+function calculateGameResult(squares: string[]): GameResult {
+    const gameResult: GameResult = {
+        status: 'Not Finished',
+    }
     const lines = [
         [0, 1, 2],
         [3, 4, 5],
@@ -68,10 +98,16 @@ function calculateWinnerLine(squares: string[]): number[] | null {
     for (let i = 0; i < lines.length; i++) {
         const [a, b, c] = lines[i];
         if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-            return lines[i];
+            gameResult.status = 'Has Winner';
+            gameResult.winner = squares[a];
+            gameResult.winnerLine = lines[i];
+            return gameResult;
         }
     }
-    return null;
+    
+    // if all squares are filled, then it's a draw.
+    gameResult.status = squares.every(Boolean) ? 'Draw' : 'Not Finished';
+    return gameResult;
 }
 
 export default function Game() {

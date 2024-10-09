@@ -71,6 +71,10 @@ body {
     width: 34px;
 }
 
+.highlighted-square {
+    background: lightblue;
+}
+
 .board-row:after {
     clear: both;
     content: '';
