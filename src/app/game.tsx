@@ -134,15 +134,40 @@ export default function Game() {
         setSortAscend(!sortAscend);
     }
     
+    // a list of [row, col] for each move, deduced from history.
+    const moveLocations: ([number, number] | null)[] = history.map((squares, move) => {
+        if (move === 0) {
+            return null;
+        }
+        const prevSquares = history[move - 1];
+        for (let i = 0; i < squares.length; i++) {
+            if (squares[i] !== prevSquares[i]) {
+                return [Math.floor(i / 3), i % 3];
+            }
+        }
+        throw new Error('Invalid move');
+    });
+    
     let moves = history.map((squares, move) => {
-        let description = move > 0 ? `Go to move #${move}` : 'Go to game start';
-        return currentMove === move ? (
+        const currentMoveLabel = `You are at move #${move}`;
+        let goToLabel = move > 0 ? `Go to move #${move}` : 'Go to game start';
+        
+        // add location suffix if available
+        let moveLocationSuffix = '';
+        if (moveLocations[move]) {
+            const [moveRow, moveCol] = moveLocations[move];
+            moveLocationSuffix = ` @ (${moveRow + 1}, ${moveCol + 1})`;
+        }
+        
+        return currentMove === move ? ( // current move
             <li key={move}>
-                <button className='btn btn-blue'>You are at move #{move}</button>
+                <button>
+                    {currentMoveLabel}{moveLocationSuffix} 
+                </button>
             </li>
-        ) : (
+        ) : ( // other moves, with a button to jump to that move.
             <li key={move}>
-                <button className='btn btn-blue' onClick={() => jumpTo(move)}>{description}</button>
+                <button onClick={() => jumpTo(move)}>{goToLabel}{moveLocationSuffix}</button>
             </li>
         );
     });
@@ -155,7 +180,7 @@ export default function Game() {
                 <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay}/>
             </div>
             <div className="game-info">
-                <button className='btn btn-blue' onClick={toggleSort}>
+                <button onClick={toggleSort}>
                     {sortAscend ? 'Sort Descend' : 'Sort Ascend'}
                 </button>
                 <ol className='list-decimal'>{moves}</ol>
